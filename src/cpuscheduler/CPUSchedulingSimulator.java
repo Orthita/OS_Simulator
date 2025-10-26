@@ -16,6 +16,9 @@ public class CPUSchedulingSimulator extends JFrame {
     private ArrayList<Process> processes;
     private JPanel dynamicInputPanel;
     private java.util.List<GanttEntry> ganttEntries;
+    private JButton rmsButton;
+    private JButton edfButton;
+    private JButton bankersButton;
 
     // Modern Color Scheme
     private final Color PRIMARY_COLOR = new Color(41, 128, 185);
@@ -66,7 +69,11 @@ public class CPUSchedulingSimulator extends JFrame {
         mainPanel.add(createInputPanel());
         mainPanel.add(createOutputPanel());
 
-        add(mainPanel, BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(mainPanel);
+        scrollPane.setBorder(null);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        add(scrollPane, BorderLayout.CENTER);
     }
 
     private JPanel createInputPanel() {
@@ -84,8 +91,8 @@ public class CPUSchedulingSimulator extends JFrame {
     }
 
     private JPanel createProcessInputCard() {
-        JPanel card = createCard("Add Process", 120);
-        card.setLayout(new GridLayout(2, 1, 0, 5));
+        JPanel card = createCard("Add Process", 200);
+        card.setLayout(new GridLayout(4, 4, 0, 0));
 
         JPanel inputPanel = new JPanel(new GridLayout(1, 8, 5, 0));
         inputPanel.setBackground(CARD_COLOR);
@@ -156,6 +163,7 @@ public class CPUSchedulingSimulator extends JFrame {
         JPanel card = createCard("Scheduling Algorithms", 150);
         card.setLayout(new BorderLayout(0, 10));
 
+        // Algorithm selection
         JPanel algoPanel = new JPanel(new BorderLayout(10, 0));
         algoPanel.setBackground(CARD_COLOR);
         algoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
@@ -168,9 +176,11 @@ public class CPUSchedulingSimulator extends JFrame {
         algoPanel.add(algoLabel, BorderLayout.WEST);
         algoPanel.add(algorithmComboBox, BorderLayout.CENTER);
 
+        // Dynamic input panel
         dynamicInputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         dynamicInputPanel.setBackground(CARD_COLOR);
 
+        // Control buttons
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         controlPanel.setBackground(CARD_COLOR);
         controlPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
@@ -178,6 +188,21 @@ public class CPUSchedulingSimulator extends JFrame {
         JButton simulateBtn = createAccentButton("Run Simulation");
         simulateBtn.addActionListener(e -> runSimulation());
 
+        // Add RMS button
+        rmsButton = createPrimaryButton("RMS Scheduler");
+        rmsButton.addActionListener(e -> openRMScheduler());
+
+        // Add EDF button
+        edfButton = createPrimaryButton("EDF Scheduler");
+        edfButton.addActionListener(e -> openEDFScheduler());
+
+        // Add Banker's Algorithm button - JUST THESE 3 LINES
+        bankersButton = createPrimaryButton("Banker's Algorithm");
+        bankersButton.addActionListener(e -> openBankersAlgorithm());
+
+        controlPanel.add(rmsButton);
+        controlPanel.add(edfButton);
+        controlPanel.add(bankersButton);  // Add this line
         controlPanel.add(simulateBtn);
 
         card.add(algoPanel, BorderLayout.NORTH);
@@ -189,11 +214,11 @@ public class CPUSchedulingSimulator extends JFrame {
 
         return card;
     }
-
     private JPanel createOutputPanel() {
         JPanel outputPanel = new JPanel();
         outputPanel.setLayout(new BoxLayout(outputPanel, BoxLayout.Y_AXIS));
         outputPanel.setBackground(BACKGROUND_COLOR);
+
 
         outputPanel.add(createOutputTableCard());
         outputPanel.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -205,6 +230,11 @@ public class CPUSchedulingSimulator extends JFrame {
     private JPanel createOutputTableCard() {
         JPanel card = createCard("Simulation Results", 300);
         card.setLayout(new BorderLayout());
+        JLabel titleLabel = new JLabel("Output Table", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        titleLabel.setForeground(TEXT_COLOR);
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        card.add(titleLabel, BorderLayout.NORTH);
 
         String[] columns = {"Process", "Arrival", "Burst", "Start", "Completion", "Waiting", "Turnaround", "Response"};
         outputTableModel = new DefaultTableModel(columns, 0) {
@@ -227,6 +257,11 @@ public class CPUSchedulingSimulator extends JFrame {
     private JPanel createGanttChartCard() {
         JPanel card = createCard("Gantt Chart", 120);
         card.setLayout(new BorderLayout());
+        JLabel titleLabel = new JLabel("Gantt Chart Visualization", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        titleLabel.setForeground(TEXT_COLOR);
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        card.add(titleLabel, BorderLayout.NORTH);
 
         ganttChartPanel = new JPanel();
         ganttChartPanel.setBackground(Color.WHITE);
@@ -562,6 +597,20 @@ public class CPUSchedulingSimulator extends JFrame {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
+    private void openRMScheduler() {
+        RMScheduler rms = new RMScheduler();
+        rms.startRMS();
+    }
+
+    private void openEDFScheduler() {
+        EDFScheduler edf = new EDFScheduler();
+        edf.startEDF();
+    }
+    private void openBankersAlgorithm() {
+        BankersAlgorithm bankers = new BankersAlgorithm();
+        bankers.startBankers();
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             new CPUSchedulingSimulator().setVisible(true);
@@ -595,7 +644,10 @@ public class CPUSchedulingSimulator extends JFrame {
             button.setOpaque(true);
             button.setBackground(ACCENT_COLOR);
             button.setForeground(Color.WHITE);
-            button.addActionListener(e -> fireEditingStopped());
+            button.addActionListener(e -> {
+                fireEditingStopped();
+                deleteProcess(row);
+            });
         }
 
         public Component getTableCellEditorComponent(JTable table, Object value,
@@ -606,7 +658,6 @@ public class CPUSchedulingSimulator extends JFrame {
         }
 
         public Object getCellEditorValue() {
-            deleteProcess(row);
             return "Delete";
         }
     }
